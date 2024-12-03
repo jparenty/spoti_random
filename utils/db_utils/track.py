@@ -2,17 +2,19 @@ import click
 
 class Track:
     def __init__(self, track: dict):
-        if track["track"]["artists"] == []:
+        if track["artists"] == []:
             artists = []
         else:
-            artists = [artist for artist in track["track"]["artists"]]
+            artists = [artist for artist in track["artists"]]
 
-        self.track_name = track["track"]["name"]
-        self.track_id = track["track"]["id"]
-        self.track_uri = track["track"]["uri"]
-        self.track_album = track["track"]["album"]["name"]
+        self.track_name = track["name"]
+        self.track_id = track["id"]
+        self.track_uri = track["uri"]
+        self.track_album = track["album"]["name"]
         self.track_artists = artists
 
+    def to_dict(self):
+        return {'key': self.key, 'value': self.value}
 
 def _get_tracks_genre_from_artist(db, track):
     if db._check_cache_exists("artists_info.json"):
@@ -27,7 +29,7 @@ def _get_tracks_genre_from_artist(db, track):
 
     return genre_tracks
 
-def get_user_tracks(db, songs_number):
+def get_user_tracks(db):
         
     ##!! à revoir
     # check if songs by genre cache exists
@@ -44,6 +46,9 @@ def get_user_tracks(db, songs_number):
         else:
             # fetch liked songs from spotify account with api
             click.secho("No cache! Fetching recent liked songs...", fg="red")
+
+            prompt_text = click.style("Enter the number of songs in spotify library (approx. round up)", fg="yellow", bold=True)
+            songs_number = click.prompt(prompt_text, type=int) 
             tracks = db.user.connection.fetch_liked_songs(songs_number)
             
             click.secho("Caching data...", fg="green")

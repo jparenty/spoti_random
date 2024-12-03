@@ -30,12 +30,22 @@ class DbUtil(SpotifyApi):
 
         self.user = _get_user(user_name)
         
-
+    def _check_cache_exists(self, path):
+        if os.path.exists(f"{CACHE_PATH}/{path}"):
+            return True
+        else:
+            return False
+        
     def _cache_data(self, path, data):
-
+        path = f"{CACHE_PATH}/{path}"
         extension = path.split(".")[-1]
         if extension == "json":
-            file = open(f"{CACHE_PATH}/{path}", "w")
+            directory = os.path.dirname(path)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+    
+            file = open(path, "w")
+            breakpoint()
             file.write(json.dumps(data, indent=4))
             file.close
             return
@@ -45,13 +55,10 @@ class DbUtil(SpotifyApi):
         else:
             return TypeError("Data type not supported by cache_data method")
     
-    def _check_cache_exists(self, path):
-        if os.path.exists(f"{CACHE_PATH}/{path}"):
-            return True
-        else:
-            return False
+
     
     def _read_cache(self, path):
+        breakpoint()
         with open(f"{CACHE_PATH}/{path}") as f:
             data = json.load(f)
             return data
@@ -76,8 +83,8 @@ class DbUtil(SpotifyApi):
         # update db
         self._cache_data(f"{self.user.user_name}/playlists.json", playlists)
     
-    def get_user_tracks(self, tracks_number):
-        genre_liked_songs = track.get_user_tracks(self, tracks_number)
+    def get_user_tracks(self):
+        genre_liked_songs = track.get_user_tracks(self)
         return genre_liked_songs
 
     # not very useful

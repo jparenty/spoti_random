@@ -1,1 +1,1 @@
-CACHE_PATH = "../../cache"
+CACHE_PATH = "./cache"

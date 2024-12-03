@@ -48,11 +48,12 @@ class SpotifyApi():
         #! a revoir -> cette methode devrait seulement gerer l appel à l api
         tracks = []
         offset = 0
-        for i in range(50, songs_number+50, 50):
-            print(f"fetching sample {i}...")
+        for i in range(50, 100+50, 50):
+            print(f"fetching songs... count: {i}...")
             self.__check_count()
             sample_saved_tracks = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
-            tracks_sample = [Track(**data) for data in sample_saved_tracks]
+            clean_sample = [{k: v for k, v in d.items() if k != 'added_at'} for d in sample_saved_tracks]
+            tracks_sample = [Track(**data) for data in clean_sample]
 
             offset = i
             tracks.extend(tracks_sample)
