@@ -53,7 +53,14 @@ class SpotifyApi():
             self.__check_count()
             sample_saved_tracks = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
             clean_sample = [{k: v for k, v in d.items() if k != 'added_at'} for d in sample_saved_tracks]
-            tracks_sample = [Track(**data) for data in clean_sample]
+            tracks_sample = [Track(
+                    name = data["track"]["name"],
+                    id = data["track"]["id"],
+                    uri = data["track"]["uri"],
+                    album = data["track"]["album"]["name"],
+                    artists = data["track"]["artists"],
+                    genre = []
+                ) for data in clean_sample]
 
             offset = i
             tracks.extend(tracks_sample)
@@ -69,11 +76,11 @@ class SpotifyApi():
 
         for track in tracks:
             genres = set()
-            for artist in track["artist"]:
+            for artist in track.artists:
                 # check if artist exists in cache
                 if artist["id"] not in list(artist_cache.keys()):
                     # fetch arist info
-                    print(f"Fetch artist info '{artist['name']}' info for '{track['track_name']}'")
+                    print(f"Fetch artist info '{artist['name']}' info for '{track.name}'")
                     self.__check_count()
                     artist_info = self.sp.artist(artist["id"])
                     # update request count
@@ -84,12 +91,12 @@ class SpotifyApi():
 
                 else:
                     # read artist info from cache
-                    click.secho(f"Read artist info '{artist['name']}' info for '{track['track_name']}'", fg="green")
+                    click.secho(f"Read artist info '{artist['name']}' info for '{track.name}'", fg="green")
                     artist_info = artist_cache[artist["id"]]
                 
                 genres = genres.union(set(artist_info["genres"]))
         
-            track["genres"] = list(genres)
+            track.genre = list(genres)
         
         ##! là où on s'arrete
         if update_cache:
