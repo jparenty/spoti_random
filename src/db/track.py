@@ -1,5 +1,3 @@
-import click
-
 class Track:
     def __init__(self, name, id, uri, album, artists, genre):
         self.name = name

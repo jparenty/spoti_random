@@ -2,7 +2,7 @@
 import json
 import os
 
-from utils.definitions import CACHE_PATH
+from .definitions import CACHE_PATH
 
 # from utils.user import User
 # from utils.db_utils.track import Track
