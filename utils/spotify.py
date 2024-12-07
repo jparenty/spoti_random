@@ -3,11 +3,11 @@ from spotipy.oauth2 import SpotifyOAuth
 
 import time
 import json
-import os
 import click
 
 from .definitions import CACHE_PATH
-from .db_utils.track import Track
+from .db.track import Track
+from db_utils import cache_data
 
 class SpotifyApi():
     
@@ -30,12 +30,12 @@ class SpotifyApi():
         current_request = time.time()
         # if it's been more than 30s since last request
         print(f"API call count: {self.request_count}")
-        if current_request - self.last_request > 100000:
+        if current_request - self.last_request > 30:
             # reset counter to 0
             self.request_count = 0
             return
-        
         else:
+            self.last_request = time.time()
             self.request_count = self.request_count + 1
             if self.request_count % 75 == 0:
                 click.secho("Slow down... API needs to chill", fg="yellow")
@@ -48,7 +48,7 @@ class SpotifyApi():
         #! a revoir -> cette methode devrait seulement gerer l appel à l api
         tracks = []
         offset = 0
-        for i in range(50, 100+50, 50):
+        for i in range(50, songs_number+50, 50):
             print(f"fetching songs... count: {i}...")
             self.__check_count()
             sample_saved_tracks = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
@@ -68,23 +68,48 @@ class SpotifyApi():
 
         return tracks
 
+    def get_new_tracks(self, last_track):
+        new_tracks = []
+        offset = 0
+
+        click.secho("Fetching new tracks", fg="green")
+        while True:
+            click.secho(f"fetching sample {offset+50}...")
+
+            self.__check_count()
+            
+            sample = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
+
+            # check if sample contains last tracks -> add sample until last track and break
+            sample_ids = [track["track"]["id"] for track in sample]
+            if last_track["track_id"] in sample_ids:
+                last_track_i = sample_ids.index(last_track["track_id"])
+                sample = sample[0:last_track_i]
+                
+                new_tracks.extend(sample)
+                break
+
+            new_tracks.extend(sample)
+            print(len(new_tracks))
+            offset += 50
+
+        return new_tracks
+
     def get_tracks_genre_from_artist(self, tracks: list[Track], artist_cache: dict):
         ##!! cette methode ne doit pas gérer les appeles à la db local
         # cette methode devrait juste gérer l appel pour choper genre artiste et c est tout
         # deplacer le reste de la logique dans db/artists.py
         update_cache = False
 
-        for track in tracks:
+        for index, track in enumerate(tracks):
             genres = set()
             for artist in track.artists:
                 # check if artist exists in cache
                 if artist["id"] not in list(artist_cache.keys()):
-                    # fetch arist info
                     print(f"Fetch artist info '{artist['name']}' info for '{track.name}'")
                     self.__check_count()
+                    # fetch artist data
                     artist_info = self.sp.artist(artist["id"])
-                    # update request count
-                    request_count =+ 1
 
                     artist_cache[artist["id"]] = artist_info
                     update_cache = True
@@ -97,12 +122,13 @@ class SpotifyApi():
                 genres = genres.union(set(artist_info["genres"]))
         
             track.genre = list(genres)
+            
+            # cache_artist_data
+            if index % 50 == 0 and update_cache == True:
+                cache_data("/artist_info.json", artist_cache)
+                update_cache = False
         
-        ##! là où on s'arrete
-        if update_cache:
-            return tracks, artist_cache
-        
-        return tracks, None
+        return tracks
 
     def write_spotify_playlist(self, spotfy_id, playlists: dict):
         #! a revoir, devrait seulment gerer l appel à l api
@@ -156,33 +182,6 @@ class SpotifyApi():
         playlist = self.sp.playlist(playlist_id)
 
         return playlist
-    
-    def get_new_tracks(self, last_track):
-        new_tracks = []
-        offset = 0
-
-        click.secho("Fetching new tracks", fg="green")
-        while True:
-            click.secho(f"fetching sample {offset+50}...")
-
-            self.__check_count()
-            
-            sample = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
-
-            # check if sample contains last tracks -> add sample until last track and break
-            sample_ids = [track["track"]["id"] for track in sample]
-            if last_track["track_id"] in sample_ids:
-                last_track_i = sample_ids.index(last_track["track_id"])
-                sample = sample[0:last_track_i]
-                
-                new_tracks.extend(sample)
-                break
-
-            new_tracks.extend(sample)
-            print(len(new_tracks))
-            offset += 50
-
-        return new_tracks
             
     # OLD
     def delete_generated_playlist(self):

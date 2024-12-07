@@ -1,29 +1,68 @@
 import click
 import time
 
-from utils.db import DbUtil
+from utils.user import User
 from ascii_art import AsciiArt
 
 
 
-def navigate(ascii, user: DbUtil):
-    while True:
-      
-      route = click.prompt(click.style("Enter a route (get tracks, about, contact, help, exit)"), type=str)
+class Navigation:
+    def __init__(self, ascii: AsciiArt, user: User):
+        self.ascii = ascii
+        self.user = user
 
-      match route:
-        case "get tracks":
-            user.get_user_tracks()
-        # case "generate playlists":
-        #     user.generate_playlists(genres_liked_songs)
-        # case "get playlists stats":
-        #     user.get_playlists_stats(playlists)
-        # case "write playlists to spotify":
-        #     user.user_write_spotify_playlists(playlists)
-        case "exit":
-            ascii.by_ascii()
-        case _:
-            click.secho("Unknown route, try again...", fg="red")
+    def bye():
+        raise NotImplementedError
+
+    def genre():
+        raise NotImplementedError
+
+    def _random_by_track(self):
+
+        while True:
+            route = click.prompt(click.style("Enter a route (by track, by playlist)"), type=str)
+            
+            if route == "":
+                #self.ascii.random()
+                self.user.generate_random_track()
+
+            #if route == "":
+
+    def _random(self):
+    
+        self.ascii.welcome_random()
+        
+        while True:
+            route = click.prompt(click.style("Enter a route (by track, by playlist)"), type=str)
+            route = route.lower()
+
+            if route in ["by track", "tracks", "t"]:
+                self.ascii.by_track()
+                self._random_by_track()
+            # match route:
+            #     case "by track":
+            #         user.get_user_tracks()
+            #     case "by playlist":
+            #         self.ascii.navigate_random()
+            #     case _ if route == "exit" or route == "e":
+            #         return
+
+    def home(self):
+        while True:
+        
+            route = click.prompt(click.style("Enter a route (update tacks, random, playlists)"), type=str)
+
+            match route:
+                case "update tracks":
+                    self.user.update_tracks()
+                case "random":
+                    self._random()
+                # case "playlist genre":
+                #     self.ascii.navigate_genre()
+                # case "exit":
+                #     self.ascii.bye()
+                case _:
+                    click.secho("Unknown route, try again...", fg="red")
 
 
 @click.command()
@@ -38,10 +77,13 @@ def main(user_name, speed):
 
     ascii.welcome_ascii()
 
-    user = DbUtil(user_name=user_name)
+    #db = DbUtil(user_name=user_name)
+    
+    user = User(user_name)
     ascii.success_auth_ascii()
 
-    navigate(ascii, user)
+    navigation = Navigation(ascii, user)
+    navigation.home()
        
     
     breakpoint()

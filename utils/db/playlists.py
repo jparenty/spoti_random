@@ -87,4 +87,5 @@ def update_user_delete_playlists(db, user_playlists, playlists: dict):
             click.secho("ERROR: genre playlist not in user's playlist", fg="red")
     
     # update db
-    db._cache_data(f"{db.user.user_name}/playlists.json", user_playlists)
+    return user_playlists
+    
