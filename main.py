@@ -1,7 +1,7 @@
 import click
 import time
 
-from utils.user import User
+from user import User
 from ascii_art import AsciiArt
 
 
