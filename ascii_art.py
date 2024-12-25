@@ -3,6 +3,10 @@ from typing import Optional
 import pyfiglet
 import time
 
+
+def stop():
+    time.sleep(2)
+
 class AsciiArt:
     def __init__(self, speed: Optional[bool] = None):
         self.speed = speed
@@ -30,130 +34,55 @@ class AsciiArt:
         else:
             time.sleep(0.1)
     
-
-    def welcome_ascii(self):
-
-        message1 = "HELLO WORLD"
-        message2 = "WELCOME"
-        message3 = "TO"
-        message4 = "THE"
-        message5 = "TRULY"
-        message6 = "RANDOM"
-        message7 = "EXPERIENCE"
-
-        ascii_art1 = pyfiglet.figlet_format(message1)
-        self._print(ascii_art1)
-        self._sleep_long()
-
-        print("\033[F\033[K" * 5, end="")
-        ascii_art2 = pyfiglet.figlet_format(message2)
-        self._print(ascii_art2)
+    def message(self, message: str):
+        ascii_art = pyfiglet.figlet_format(message)
+        self._print(ascii_art)
         self._sleep()
-
-        print("\033[F\033[K" * 5, end="")
-        ascii_art2 = pyfiglet.figlet_format(message3)
-        self._print(ascii_art2)
-        self._sleep()
-
-        print("\033[F\033[K" * 5, end="")
-        ascii_art2 = pyfiglet.figlet_format(message4)
-        self._print(ascii_art2)
-        self._sleep()
-
-        print("\033[F\033[K" * 5, end="")
-        ascii_art2 = pyfiglet.figlet_format(message5)
-        self._print(ascii_art2)
-        self._sleep()
-
-        print("\033[F\033[K" * 5, end="")
-        ascii_art2 = pyfiglet.figlet_format(message6)
-        self._print(ascii_art2)
-        self._sleep()
-        
-        print("\033[F\033[K" * 5, end="")
-        ascii_art2 = pyfiglet.figlet_format(message7)
-        self._print(ascii_art2)
-        self._sleep()
-        
-        print("\033[F\033[K" * 5, end="")
-
-    def welcome_random(self):
-        message1 = "FUCK"
-        message2 = "YEAH"
-        message3 = "TRULY"
-        message4 = "RANDOM"
-        message5 = "SONGS"
-
-        ascii_art1 = pyfiglet.figlet_format(message1)
-        self._sleep_short()
-        self._print(ascii_art1)
-        print("\033[F\033[K" * 5, end="")
-
-        ascii_art2 = pyfiglet.figlet_format(message2)
-        self._sleep_short()
-        self._print(ascii_art2)
-        print("\033[F\033[K" * 5, end="")
-
-        ascii_art3 = pyfiglet.figlet_format(message3)
-        self._sleep_short()
-        self._print(ascii_art3)
-        print("\033[F\033[K" * 5, end="")
-
-        ascii_art4 = pyfiglet.figlet_format(message4)
-        self._sleep_short()
-        self._print(ascii_art4)
-        print("\033[F\033[K" * 5, end="")
-
-        ascii_art5 = pyfiglet.figlet_format(message5)
-        self._sleep_short()
-        self._print(ascii_art5)
         print("\033[F\033[K" * 5, end="")
     
+    def message_long(self, message: str):
+        ascii_art = pyfiglet.figlet_format(message)
+        self._sleep()
+        self._print(ascii_art)
+        print("\033[F\033[K" * 5, end="")
+
+
+    def welcome_ascii(self):
+        self.message("HELLO")
+        self.message("WELCOME")
+        self.message("SPOTIFY")
+        self.message("EXTENSION")
+        self.message("BY")
+        self.message("JANUS")
+
+
+    def welcome_random(self):
+        self.message("FUCK")
+        self.message("YEAH")
+        self.message("TRULY")
+        self.message("RANDOM")
+        self.message("SONGS")
+    
+    def by(self):
+        self.message_long("BY")
+        stop()
+
+    def exit(self):
+        self.message_long("EXIT")
+
     def by_track(self):
-        message1 = "BY"
-        message2 = "TRACK"
+        self.message_long("BY")
+        self.message_long("TRACK")
 
-        ascii_art1 = pyfiglet.figlet_format(message1)
-        self._sleep()
-        self._print(ascii_art1)
-        print("\033[F\033[K" * 5, end="")
+    def home(self):
+        self.message("HOME`")
 
-        ascii_art2 = pyfiglet.figlet_format(message2)
-        self._sleep()
-        self._print(ascii_art2)
-        print("\033[F\033[K" * 5, end="")
+    def random(self):
+        self.message_long("RANDOM")
 
     def success_auth_ascii(self):
-        message1 = "SUCCESS"
-        message2 = "AUTH"
-
-
-        ascii_art1 = pyfiglet.figlet_format(message1)
-        ascii_art2 = pyfiglet.figlet_format(message2)
-        self._print(ascii_art1)
-        self._print(ascii_art2)
-        self._sleep_long()
-        print("\033[F\033[K" * 11, end="")
-        print(ascii_art2)
-        print("\033[F\033[K" * 6, end="")
-        #delay(ascii_art2)
-        self._sleep()
-
-    # def random(self):
-    #     message1 = "Random ."
-    #     message2 = "Random .."
-    #     message3 = "Random ..."
-        
-    #     ascii_art1 = pyfiglet.figlet_format(message1)
-    #     ascii_art2 = pyfiglet.figlet_format(message2)
-    #     ascii_art3 = pyfiglet.figlet_format(message3)
-
-    #     self._print(ascii_art1)
-    #     self.print(ascii_art2)
-    #     self.print(ascii_art3)
-
-
+        self.message_long("SUCCESS")
+        self.message_long("AUTH")
 
     def by_ascii(self):
         pass
-

@@ -7,7 +7,7 @@ import click
 
 from .definitions import CACHE_PATH
 from .db.track import Track
-from db_utils import cache_data
+from .db_utils import cache_data
 
 class SpotifyApi():
     
@@ -26,45 +26,36 @@ class SpotifyApi():
         print(self.sp.current_user())
         click.secho("Authentification successfull", fg="green")
 
-    def __check_count(self):
+    def _check_api_call(self, reset_count: int = 75):
         current_request = time.time()
         # if it's been more than 30s since last request
         print(f"API call count: {self.request_count}")
-        if current_request - self.last_request > 30:
+        if current_request - self.last_request > 500:
             # reset counter to 0
             self.request_count = 0
             return
         else:
             self.last_request = time.time()
             self.request_count = self.request_count + 1
-            if self.request_count % 75 == 0:
+            if self.request_count % reset_count == 0:
                 click.secho("Slow down... API needs to chill", fg="yellow")
                 for i in range(15, 0, -1):
                     print(f"sleeping {i}")
                     time.sleep(1)
 
     
-    def fetch_liked_songs(self, songs_number: int) -> list[Track]:
-        #! a revoir -> cette methode devrait seulement gerer l appel à l api
-        tracks = []
-        offset = 0
-        for i in range(50, songs_number+50, 50):
-            print(f"fetching songs... count: {i}...")
-            self.__check_count()
-            sample_saved_tracks = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
-            clean_sample = [{k: v for k, v in d.items() if k != 'added_at'} for d in sample_saved_tracks]
-            tracks_sample = [Track(
-                    name = data["track"]["name"],
-                    id = data["track"]["id"],
-                    uri = data["track"]["uri"],
-                    album = data["track"]["album"]["name"],
-                    artists = data["track"]["artists"],
-                    genre = []
-                ) for data in clean_sample]
-
-            offset = i
-            tracks.extend(tracks_sample)
-            print(len(tracks))
+    def fetch_liked_tracks(self, offset: int = 0) -> list[Track]:
+        print(f"Fetching songs... count: {offset}...")
+        self._check_api_call()
+        sample_saved_tracks = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
+        tracks = [Track(
+                name = data["track"]["name"],
+                id = data["track"]["id"],
+                url = data["track"]["external_urls"]["spotify"],
+                album = data["track"]["album"]["name"],
+                artists = data["track"]["artists"],
+                genre = []
+            ) for data in sample_saved_tracks]
 
         return tracks
 
@@ -76,7 +67,7 @@ class SpotifyApi():
         while True:
             click.secho(f"fetching sample {offset+50}...")
 
-            self.__check_count()
+            self._check_api_call()
             
             sample = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
 
@@ -106,9 +97,11 @@ class SpotifyApi():
             for artist in track.artists:
                 # check if artist exists in cache
                 if artist["id"] not in list(artist_cache.keys()):
-                    print(f"Fetch artist info '{artist['name']}' info for '{track.name}'")
-                    self.__check_count()
+                    print(f"Fetch artist '{artist['name']}' for track '{track.name}'")
+                    time.sleep(0.05)
+                    self._check_api_call(reset_count=50)
                     # fetch artist data
+                    #breakpoint()
                     artist_info = self.sp.artist(artist["id"])
 
                     artist_cache[artist["id"]] = artist_info
@@ -116,7 +109,7 @@ class SpotifyApi():
 
                 else:
                     # read artist info from cache
-                    click.secho(f"Read artist info '{artist['name']}' info for '{track.name}'", fg="green")
+                    click.secho(f"Read artist '{artist['name']}' for track '{track.name}'", fg="green")
                     artist_info = artist_cache[artist["id"]]
                 
                 genres = genres.union(set(artist_info["genres"]))
@@ -138,7 +131,7 @@ class SpotifyApi():
         for playlist in sorted_playlists:
             # create genre
             print("creating new playlist: " + str(playlist) + " ...")
-            #self.__check_count()
+            #self._check_api_call()
             new_playlist = self.sp.user_playlist_create(spotfy_id, str(playlist), public=False, description = playlists[playlist]["description"])
             request_count =+ 1
 
@@ -152,7 +145,7 @@ class SpotifyApi():
                 for track in sub:
                     songs_uri.append(track["track_uri"])
 
-                #self.__check_count()
+                #self._check_api_call()
                 self.sp.user_playlist_add_tracks(self.user_name, new_playlist["id"], songs_uri)
                 request_count =+ 1
         
@@ -167,7 +160,7 @@ class SpotifyApi():
         for playlist in user_playlists:
             if "spotify_id" in list(user_playlists[playlist].keys()):
                 print(f"Generated playlist {playlist} removed from account!")
-                self.__check_count()
+                self._check_api_call()
                 self.sp.current_user_unfollow_playlist(user_playlists[playlist]["spotify_id"])
                 request_count =+ 1
                 # remove spotify id from the playlist dict

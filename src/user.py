@@ -1,6 +1,7 @@
 import json
 import click
 import os
+import random
 
 from .spotify import SpotifyApi
 from .definitions import CACHE_PATH
@@ -19,9 +20,8 @@ class User():
                         user_name = user["user_name"],
                         spotify_id = user["spotify_id"]
                     )
-                    #! attention list pourquoi?
                     user.spotify_id = user.spotify_id
-                
+
             except FileNotFoundError:
                 user = None
             except Exception as e:
@@ -91,15 +91,15 @@ class User():
 
     def _get_tracks(self):
         # check if songs by genre cache exists
-        if check_cache_exists(f"{self.user_name}/genre_clean_songs.json"):
+        if check_cache_exists(f"{self.user_name}/tracks_genre.json"):
             click.secho("Tracks already fetched...", fg="green")
-            genre_tracks = self._read_cache_tracks(f"{self.user_name}/genre_clean_songs.json") 
+            tracks_genre = self._read_cache_tracks(f"{self.user_name}/tracks_genre.json") 
 
         else:
             #check if cache liked songs exists
             if check_cache_exists(f"{self.user_name}/clean_songs.json"):
                 click.secho("Reading cache liked songs...", fg="yellow")
-                tracks_raw = self._read_cache_tracks(f"{self.user_name}/clean_songs.json") 
+                tracks_no_genre = self._read_cache_tracks(f"{self.user_name}/clean_songs.json") 
 
             else:
                 # fetch liked songs from spotify account with api
@@ -107,19 +107,35 @@ class User():
 
                 prompt_text = click.style("Enter the number of songs in spotify library (approx. round up)", fg="yellow", bold=True)
                 songs_number = click.prompt(prompt_text, type=int) 
-                tracks_raw = self.connection.fetch_liked_songs(songs_number)
+                tracks_genre = self._fetch_liked_songs(songs_number)
                 
                 click.secho("Caching data...", fg="green")
-                self._cache_tracks(f"{self.user_name}/clean_songs.json", tracks_raw)
+                self._cache_tracks(f"{self.user_name}/tracks_genre.json", tracks_genre)
+                #self._cache_tracks(f"{self.user_name}/clean_songs.json", tracks_raw)
 
-            #assign genres to song based on artists genre
-            genre_tracks = self._get_tracks_genre_from_artist(tracks_raw)
+            # #assign genres to song based on artists genre
+            # tracks_genre = self._get_tracks_genre_from_artist(tracks_raw)
 
             # cache songs with genre information
-            self._cache_tracks(f"{self.user_name}/genre_clean_songs.json", genre_tracks)
 
-        return genre_tracks
+        return tracks_genre
+    
+    def _fetch_liked_songs(self, songs_number: int) -> list[Track]:
+        #! a revoir -> cette methode devrait seulement gerer l appel à l api
+        tracks_genre = []
+        offset = 0
+        for i in range(50, songs_number+50, 50):
+            # get liked tracks from spotify
+            tracks_sample = self.connection.fetch_liked_tracks(offset)    
+            # assign genre on liked tracks sample
+            tracks_genre_sample = self._get_tracks_genre_from_artist(tracks_sample)
+            tracks_genre.extend(tracks_genre_sample)
+            print(len(tracks_genre))
+            
+            offset = i
 
+        return tracks_genre
+    
     def _get_last_track(self):
         user_tracks = self._read_cache_tracks(f"{self.user_name}/clean_songs.json")
         return user_tracks[0]
@@ -143,3 +159,7 @@ class User():
         else:
             click.secho(f"No saved songs to update for {self.user_name}", fg="red")
             
+    def generate_random_track(self):
+        random_track_index = random.randint(0, len(self.tracks))
+        track_url = self.tracks[random_track_index].url
+        return print(track_url)

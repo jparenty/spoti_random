@@ -1,7 +1,7 @@
 import click
 import time
 
-from user import User
+from src.user import User
 from ascii_art import AsciiArt
 
 
@@ -18,15 +18,15 @@ class Navigation:
         raise NotImplementedError
 
     def _random_by_track(self):
-
         while True:
-            route = click.prompt(click.style("Enter a route (by track, by playlist)"), type=str)
+            route = click.prompt(click.style("Generate a random track by pressing enter (or type 'exit')"), default="", show_default=False, type=str)
             
             if route == "":
-                #self.ascii.random()
+                self.ascii.random()
                 self.user.generate_random_track()
-
-            #if route == "":
+            if route in ["exit", "e"]:
+                self.ascii.exit()
+                self._random()
 
     def _random(self):
     
@@ -39,6 +39,10 @@ class Navigation:
             if route in ["by track", "tracks", "t"]:
                 self.ascii.by_track()
                 self._random_by_track()
+                continue
+            if route in ["exit", "e"]:
+                self.ascii.exit()
+                self.home()
             # match route:
             #     case "by track":
             #         user.get_user_tracks()
@@ -49,20 +53,24 @@ class Navigation:
 
     def home(self):
         while True:
-        
+            
+            self.ascii.home()
             route = click.prompt(click.style("Enter a route (update tacks, random, playlists)"), type=str)
 
-            match route:
-                case "update tracks":
-                    self.user.update_tracks()
-                case "random":
-                    self._random()
-                # case "playlist genre":
-                #     self.ascii.navigate_genre()
-                # case "exit":
-                #     self.ascii.bye()
-                case _:
-                    click.secho("Unknown route, try again...", fg="red")
+            if route in ["update tracks", "u t"]:
+                self.user.update_tracks()
+            if route in ["random", "r"]:
+                self._random()
+                continue
+            # case "playlist genre":
+            #     self.ascii.navigate_genre()
+            # case "exit":
+            #     self.ascii.bye()
+            if route in ["exist", "e", "q"]:
+                self.ascii.by()
+                return
+            else:
+                click.secho("Unknown route, try again...", fg="red")
 
 
 @click.command()
@@ -84,13 +92,6 @@ def main(user_name, speed):
 
     navigation = Navigation(ascii, user)
     navigation.home()
-       
-    
-    breakpoint()
-    #songs_number = int(songs_number)
-    #print current user information
-
-    #navigate(user, songs_number)
 
     return
 
