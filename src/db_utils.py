@@ -15,30 +15,25 @@ def check_cache_exists(path):
     else:
         return False
 
+def read_cache(path):
+    path = f"{CACHE_PATH}/{path}"
+
+    with open(path) as f:
+        data = json.load(f)
+    
+    return data
+
 def cache_data(path, data):
     path = f"{CACHE_PATH}/{path}"
-    extension = path.split(".")[-1]
-    if extension == "json":
-        directory = os.path.dirname(path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        
-        if isinstance(data, list):
-            data = [obj.to_dict() for obj in data]
-        else:
-            if not isinstance(data, dict):
-                data = data.to_dict()
 
-        file = open(path, "w")
-
-        file.write(json.dumps(data, indent=4))
-        file.close
-        return
-    elif extension == "csv":
-        data.to_csv(f"{CACHE_PATH}/{path}")
-        return
-    else:
-        return TypeError("Data type not supported by cache_data method")
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    with open(path, "w") as file:
+        json.dump(data, file, indent=4)
+    
+    return
 
 
 

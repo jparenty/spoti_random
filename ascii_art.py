@@ -11,6 +11,10 @@ class AsciiArt:
     def __init__(self, speed: Optional[bool] = None):
         self.speed = speed
 
+    @staticmethod
+    def remove_menu():
+        print("\033[F\033[K" * 6, end="")
+
     def _print(self, messasge):
         for char in messasge:
             print(char, end="", flush=True)
@@ -33,17 +37,17 @@ class AsciiArt:
             time.sleep(0.05) 
         else:
             time.sleep(0.1)
-    
+
     def message(self, message: str):
         ascii_art = pyfiglet.figlet_format(message)
         self._print(ascii_art)
-        self._sleep()
+        self._sleep_short()
         print("\033[F\033[K" * 5, end="")
     
     def message_long(self, message: str):
         ascii_art = pyfiglet.figlet_format(message)
-        self._sleep()
         self._print(ascii_art)
+        self._sleep()
         print("\033[F\033[K" * 5, end="")
 
 
@@ -56,15 +60,15 @@ class AsciiArt:
         self.message("JANUS")
 
 
-    def welcome_random(self):
+    def random_by_track(self):
         self.message("FUCK")
         self.message("YEAH")
         self.message("TRULY")
         self.message("RANDOM")
         self.message("SONGS")
     
-    def by(self):
-        self.message_long("BY")
+    def bye(self):
+        self.message_long("BYE")
         stop()
 
     def exit(self):
@@ -75,10 +79,13 @@ class AsciiArt:
         self.message_long("TRACK")
 
     def home(self):
-        self.message("HOME`")
+        self.message("HOME")
+
+    def random_menu(self):
+        self.message("RANDOM")
 
     def random(self):
-        self.message_long("RANDOM")
+        self.message_long("...")
 
     def success_auth_ascii(self):
         self.message_long("SUCCESS")

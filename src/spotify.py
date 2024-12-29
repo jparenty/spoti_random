@@ -7,13 +7,17 @@ import click
 
 from .definitions import CACHE_PATH
 from .db.track import Track
+from .db.device import Device
 from .db_utils import cache_data
 
 class SpotifyApi():
     
     def __init__(self, user_name, spotify_id) -> None:
         def _auth_02(user_name):
-            scope = 'user-library-read playlist-modify-private playlist-read-private playlist-modify-public'
+            library_scope = ["user-library-read"]
+            playlist_scope = ["playlist-modify-private", "playlist-read-private", "playlist-modify-public"]
+            listening_scope = ["user-modify-playback-state", "user-read-playback-state", "user-read-currently-playing"]
+            scope = " ".join(library_scope + playlist_scope + listening_scope)
             sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope, show_dialog = True, username=user_name))
             return sp
         
@@ -27,6 +31,8 @@ class SpotifyApi():
         click.secho("Authentification successfull", fg="green")
 
     def _check_api_call(self, reset_count: int = 75):
+        time.sleep(0.2)
+
         current_request = time.time()
         # if it's been more than 30s since last request
         print(f"API call count: {self.request_count}")
@@ -39,7 +45,7 @@ class SpotifyApi():
             self.request_count = self.request_count + 1
             if self.request_count % reset_count == 0:
                 click.secho("Slow down... API needs to chill", fg="yellow")
-                for i in range(15, 0, -1):
+                for i in range(10, 0, -1):
                     print(f"sleeping {i}")
                     time.sleep(1)
 
@@ -52,6 +58,7 @@ class SpotifyApi():
                 name = data["track"]["name"],
                 id = data["track"]["id"],
                 url = data["track"]["external_urls"]["spotify"],
+                uri = data["track"]["uri"],
                 album = data["track"]["album"]["name"],
                 artists = data["track"]["artists"],
                 genre = []
@@ -67,9 +74,11 @@ class SpotifyApi():
         while True:
             click.secho(f"fetching sample {offset+50}...")
 
-            self._check_api_call()
+            sample = self.fetch_liked_tracks(offset)
             
-            sample = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
+            #sample = self.sp.current_user_saved_tracks(limit = 50, offset=offset)["items"]
+            breakpoint()
+            # check if last track is in sample of track -> #? how we compare object
 
             # check if sample contains last tracks -> add sample until last track and break
             sample_ids = [track["track"]["id"] for track in sample]
@@ -86,7 +95,12 @@ class SpotifyApi():
 
         return new_tracks
 
-    def get_tracks_genre_from_artist(self, tracks: list[Track], artist_cache: dict):
+    def get_artist(self, artist_id):
+        self._check_api_call(reset_count=50)
+        # fetch artist data
+        artist_info = self.sp.artist(artist_id)
+        
+        return artist_info
         ##!! cette methode ne doit pas gérer les appeles à la db local
         # cette methode devrait juste gérer l appel pour choper genre artiste et c est tout
         # deplacer le reste de la logique dans db/artists.py
@@ -98,7 +112,6 @@ class SpotifyApi():
                 # check if artist exists in cache
                 if artist["id"] not in list(artist_cache.keys()):
                     print(f"Fetch artist '{artist['name']}' for track '{track.name}'")
-                    time.sleep(0.05)
                     self._check_api_call(reset_count=50)
                     # fetch artist data
                     #breakpoint()
@@ -118,8 +131,12 @@ class SpotifyApi():
             
             # cache_artist_data
             if index % 50 == 0 and update_cache == True:
-                cache_data("/artist_info.json", artist_cache)
+                cache_data("artist_info.json", artist_cache)
                 update_cache = False
+        
+        if update_cache == True:
+            cache_data("artist_info.json", artist_cache)
+            update_cache = False
         
         return tracks
 
@@ -175,7 +192,17 @@ class SpotifyApi():
         playlist = self.sp.playlist(playlist_id)
 
         return playlist
-            
+    
+    def get_available_devices(self):
+        devices_data = self.sp.devices()
+        devices = [Device(**device_data) for device_data in devices_data["devices"]]
+
+        return devices
+
+
+    def play_song(self, device : Device, track : Track):
+        self.sp.start_playback(device_id=device.id, uris=[track.uri]) 
+
     # OLD
     def delete_generated_playlist(self):
 

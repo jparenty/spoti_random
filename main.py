@@ -1,5 +1,6 @@
 import click
 import time
+import inquirer
 
 from src.user import User
 from ascii_art import AsciiArt
@@ -11,63 +12,135 @@ class Navigation:
         self.ascii = ascii
         self.user = user
 
-    def bye():
-        raise NotImplementedError
-
-    def genre():
+    def _genre():
         raise NotImplementedError
 
     def _random_by_track(self):
         while True:
-            route = click.prompt(click.style("Generate a random track by pressing enter (or type 'exit')"), default="", show_default=False, type=str)
-            
-            if route == "":
+            route = [
+                inquirer.List(
+                    "choice",
+                    message="Random",
+                    choices=["Play Random Track", "Exit"],
+                ),
+            ]
+            route = inquirer.prompt(route)
+            self.ascii.remove_menu()
+            if route["choice"] == "Play Random Track":
                 self.ascii.random()
-                self.user.generate_random_track()
-            if route in ["exit", "e"]:
+                self.user.play_random_track()
+            if route["choice"] == "Exit":
                 self.ascii.exit()
-                self._random()
+                return
 
     def _random(self):
     
-        self.ascii.welcome_random()
-        
         while True:
-            route = click.prompt(click.style("Enter a route (by track, by playlist)"), type=str)
-            route = route.lower()
 
-            if route in ["by track", "tracks", "t"]:
-                self.ascii.by_track()
+            self.ascii.random_menu()
+
+            route = [
+                inquirer.List(
+                    "choice",
+                    message="Random",
+                    choices=["By Track", "By Mood", "Exit"],
+                ),
+            ]
+            route = inquirer.prompt(route)
+            self.ascii.remove_menu()
+
+            if route["choice"] == "By Track":
+                self.ascii.random_by_track()
                 self._random_by_track()
+                self.ascii.random_menu()
+                
                 continue
-            if route in ["exit", "e"]:
+
+            if route["choice"] == "By Mood":
+                print("Not implemented yet")
+                self.ascii.random_menu()
+                pass
+
+            if route["choice"] == "Exit":
                 self.ascii.exit()
-                self.home()
-            # match route:
-            #     case "by track":
-            #         user.get_user_tracks()
-            #     case "by playlist":
-            #         self.ascii.navigate_random()
-            #     case _ if route == "exit" or route == "e":
-            #         return
+                return
+
+    def _set_playback_device(self):
+
+        devices = self.user.connection.get_available_devices()
+
+        if devices == []:
+            click.secho("No devices available", fg="red")
+            return
+        
+        device = [
+            inquirer.List(
+                "choice",
+                message="Select a device for playback:",
+                choices=devices,
+            ),
+        ]
+        device = inquirer.prompt(device)
+        self.ascii.remove_menu()
+
+        self.user.device = device["choice"]
+
+    def _profile_home(self):
+        while True:
+
+            route = [
+                    inquirer.List(
+                        "choice",
+                        message="Profile",
+                        choices=["Playback Device", "Update Tracks", "Exit"],
+                    ),
+                ]
+            route = inquirer.prompt(route)
+            self.ascii.remove_menu()
+
+            if route["choice"] == "Playback Device":
+                self._set_playback_device()
+                continue
+
+            if route["choice"] == "Update Tracks":
+                self.user.update_tracks()
+                continue
+
+            if route["choice"] == "Exit":
+                self.ascii.exit()
+                return
 
     def home(self):
+        
+        self._set_playback_device()
+        
+
         while True:
             
             self.ascii.home()
-            route = click.prompt(click.style("Enter a route (update tacks, random, playlists)"), type=str)
 
-            if route in ["update tracks", "u t"]:
-                self.user.update_tracks()
-            if route in ["random", "r"]:
+            route = [
+                inquirer.List(
+                    "choice",
+                    message="Menu",
+                    choices=["Profile", "Random", "Genre", "Exit"],
+                ),
+            ]
+            route = inquirer.prompt(route)
+            self.ascii.remove_menu()
+
+            if route["choice"] == "Profile":
+                self._profile_home()
+                self.ascii.home()
+                continue
+            if route["choice"] == "Random":
                 self._random()
+                self.ascii.home()
                 continue
             # case "playlist genre":
             #     self.ascii.navigate_genre()
-            # case "exit":
-            #     self.ascii.bye()
-            if route in ["exist", "e", "q"]:
-                self.ascii.by()
+            if route["choice"] == "Exit":
+                self.ascii.bye()
                 return
             else:
                 click.secho("Unknown route, try again...", fg="red")
@@ -77,16 +150,12 @@ class Navigation:
 @click.argument("user_name")
 @click.option("-s", "--speed", is_flag=True, help="Speed animations")
 def main(user_name, speed):
-
     if speed:
         ascii = AsciiArt(speed=speed)
     else:
         ascii = AsciiArt()
 
     ascii.welcome_ascii()
-
-    #db = DbUtil(user_name=user_name)
-    
     user = User(user_name)
     ascii.success_auth_ascii()
 
